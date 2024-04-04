@@ -4,7 +4,7 @@
 typedef std::vector<std::vector<int>> Matrix;
 
 // Global Variables
-const int MAX_MATRIX_VAL = 3;
+const int MAX_MATRIX_VAL = 10;
 
 // Prototypes
 // Utility functions

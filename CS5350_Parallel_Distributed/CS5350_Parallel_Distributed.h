@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
+#include <cmath>
 
 #include <time.h>
 #include <chrono>
@@ -17,15 +18,8 @@ typedef std::vector<std::vector<int>> Matrix;
 const bool TIMER = true;
 const bool DEBUG = false;
 
-// A = m x n, B = n x q, C = m x q
-const int m = 16;
-const int n = 16;
-const int q = 16;
-
-const int MAX_THREADS = 64; // Depends on your computer
-
 
 // Matrix Multiplications
-Matrix MM_sequential(Matrix matrixA, Matrix matrixB);
-Matrix MM_simple_parallel(Matrix matrixA, Matrix matrixB, int p_max = MAX_THREADS);
-Matrix MM_1D_parallel(Matrix matrixA, Matrix matrixB, int p_max = MAX_THREADS);
+Matrix MM_sequential(const Matrix matrixA, const Matrix matrixB);
+Matrix MM_simple_parallel(const Matrix matrixA, const Matrix matrixB, int p_count);
+Matrix MM_1D_parallel(const Matrix matrixA, const Matrix matrixB, int p_count);

@@ -1,4 +1,5 @@
 #include "matrix_util.h"
+
 // Print out all the contents of the nested/2D vector (v)
 void print_2D_vector(Matrix v)
 {
@@ -9,7 +10,6 @@ void print_2D_vector(Matrix v)
 
         std::cout << std::endl;
     }
-
     std::cout << std::endl;
 }
 
@@ -19,7 +19,6 @@ void print_1D_vector(std::vector<int> v)
     for (int i = 0; i < v.size(); i++)
         std::cout << v[i] << " ";
 
-    std::cout << std::endl;
 }
 
 void verify(Matrix v, Matrix control)
@@ -33,12 +32,19 @@ void verify(Matrix v, Matrix control)
             if (v[i][j] != control[i][j])
             {
                 std::cout << "Failed at [" << i << "][" << j << "]" << std::endl;
-                std::cout << "Matrix Answer: " << v[i][j] << "; Control Answer: " << control[i][j] << std::endl;
+
+                std::cout << "Answer" << std::endl;
+                print_2D_vector(v);
+
+                std::cout << "Control" << std::endl;
+                print_2D_vector(control);
+
+                std::cout << "Matrix Answer: " << v[i][j] << "; Control Answer: " << control[i][j] << std::endl << std::endl;
                 return;
             }
         }
     }
-    std::cout << "Test complete. No errors found." << std::endl;
+    std::cout << "Test complete. No errors found." << std::endl << std:: endl;
 }
 
 /*
@@ -70,7 +76,7 @@ Matrix identity_matrix(int rows, int cols)
 {
     Matrix result(rows, std::vector<int>(cols, 0));
 
-    for (int i = 0; i < m; i++) {
+    for (int i = 0; i < rows; i++) {
         result[i][i] = 1;
     }
 
