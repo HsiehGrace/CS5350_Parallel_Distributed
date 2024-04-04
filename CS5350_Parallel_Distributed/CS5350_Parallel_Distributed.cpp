@@ -9,20 +9,6 @@
 // Nested Integer Vectors -> Dynamic 2D Array
 typedef std::vector<std::vector<int>> Matrix;
 
-
-// Prototypes
-// Utility functions
-void print_2D_vector(Matrix v);
-void print_1D_vector(std::vector<int> v);
-void verify(Matrix v, Matrix control);
-Matrix random_2D_vector(int rows, int cols, int max_val = 3);
-Matrix identity_matrix(int rows, int cols);
-
-// Matrix Multiplications
-Matrix MM_sequential(Matrix matrixA, Matrix matrixB);
-Matrix MM_1D_Parallel(Matrix matrixA, Matrix matrixB, int p_count = 10);
-
-
 // Global Variables
 // Functional Constants
 const bool TIMER = true;
@@ -32,6 +18,21 @@ const bool DEBUG = false;
 const int m = 16;
 const int n = 16;
 const int q = 16;
+const int MAX_THREADS = 64; // Depends on your computer
+const int MAX_VAL = 3;      // For the random vectors
+
+// Prototypes
+// Utility functions
+void print_2D_vector(Matrix v);
+void print_1D_vector(std::vector<int> v);
+void verify(Matrix v, Matrix control);
+Matrix random_2D_vector(int rows, int cols, int max_val = MAX_VAL);
+Matrix identity_matrix(int rows, int cols);
+
+// Matrix Multiplications
+Matrix MM_sequential(Matrix matrixA, Matrix matrixB);
+Matrix MM_1D_Parallel(Matrix matrixA, Matrix matrixB, int p_max = MAX_THREADS);
+
 
 int main()
 {
@@ -43,21 +44,21 @@ int main()
         }
         */
 
-
-
-    // Create matricies
+    // ------ Create matricies --------------------
     Matrix matrixA = random_2D_vector(m, n); // m x n
     Matrix matrixB = random_2D_vector(n, q); // n x q
     Matrix matrixSequential;                 // Use for verify
     Matrix matrix1D;
 
-    // MM Algorithms
     print_2D_vector(matrixA);
     print_2D_vector(matrixB);
+
+    // ------ MM Algorithms -----------------------
+    // Sequential
     matrixSequential = MM_sequential(matrixA, matrixB);
     print_2D_vector(matrixSequential);
 
-
+    // 1D Parallel
     matrix1D = MM_1D_Parallel(matrixA, matrixB);
     print_2D_vector(matrix1D);
     verify(matrix1D, matrixSequential);
@@ -187,7 +188,7 @@ Matrix MM_sequential(Matrix matrixA, Matrix matrixB)
     return result;
 }
 
-Matrix MM_1D_Parallel(Matrix matrixA, Matrix matrixB, const int p_count)
+Matrix MM_1D_Parallel(Matrix matrixA, Matrix matrixB, const int p_max)
 {
     // A (m x n) * B (n x q) = C (m x q)
     int m = matrixA.size();
@@ -195,7 +196,21 @@ Matrix MM_1D_Parallel(Matrix matrixA, Matrix matrixB, const int p_count)
     int q = matrixB[0].size();
     Matrix result(m, std::vector<int>(q));
 
-    omp_set_num_threads(p_count);
+    // Check Thread Count
+    int p_count = 0;
+    if (p_max < m)
+    {
+        omp_set_num_threads(p_max);
+        p_count = p_max;
+    }
+    else
+    {
+        omp_set_num_threads(m);
+        p_count = m;
+    }
+
+    std::cout << "Number of Threads: " << p_count << std::endl;
+
 
     // Start Timer
     auto start = std::chrono::high_resolution_clock::now();
@@ -204,11 +219,6 @@ Matrix MM_1D_Parallel(Matrix matrixA, Matrix matrixB, const int p_count)
     #pragma omp parallel
     {
         int r = omp_get_thread_num();
-
-        // #pragma omp critical
-        // {
-        //   std::cout << "Hello from thread : " << r << "\n";
-        // }
 
         for (int i = 0; i < m / p_count; i++) {
             for (int j = 0; j < q; j++) {
