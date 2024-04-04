@@ -18,5 +18,16 @@
     <ClCompile Include="CS5350_Parallel_Distributed.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="matrix_util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="matrix_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CS5350_Parallel_Distributed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

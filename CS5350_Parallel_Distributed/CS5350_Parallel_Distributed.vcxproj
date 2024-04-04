@@ -130,6 +130,11 @@
     <ClCompile Include="CS5350_Parallel_Distributed.cpp">
       <OpenMPSupport Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</OpenMPSupport>
     </ClCompile>
+    <ClCompile Include="matrix_util.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CS5350_Parallel_Distributed.h" />
+    <ClInclude Include="matrix_util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
