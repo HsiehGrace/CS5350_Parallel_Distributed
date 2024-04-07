@@ -2,7 +2,7 @@ OBJS	= matrix_util.o CS5350_Parallel_Distributed.o
 SOURCE	= matrix_util.cpp CS5350_Parallel_Distributed.cpp
 HEADER	= matrix_util.h CS5350_Parallel_Distributed.h
 OUT	= a.out
-FLAGS	= -g -c -Wall -fopenmp
+FLAGS	= -g -c -Wall -fopenmp -Iinclude
 LFLAGS	= 
 CC	= g++
 
