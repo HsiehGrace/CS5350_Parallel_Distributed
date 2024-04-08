@@ -1,7 +1,7 @@
 OBJS	= matrix_util.o main.o
 SOURCE	= matrix_util.cpp main.cpp
 HEADER	= matrix_util.h main.h
-OUT	= a.out
+OUT	= program.out
 FLAGS	= -g -c -Wall -fopenmp
 LFLAGS	= 
 CC	= g++
