@@ -6,7 +6,7 @@ FLAGS	= -g -c -Wall -fopenmp
 LFLAGS	= 
 CC	= g++
 
-all:	a.out
+all:	main.out
 
 a.out: $(OBJS)
 	$(CC) -g $(OBJS) -o $(OUT) $(LFLAGS)
