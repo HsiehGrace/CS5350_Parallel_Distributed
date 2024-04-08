@@ -1,8 +1,8 @@
-OBJS	= matrix_util.o CS5350_Parallel_Distributed.o
-SOURCE	= matrix_util.cpp CS5350_Parallel_Distributed.cpp
-HEADER	= matrix_util.h CS5350_Parallel_Distributed.h
+OBJS	= matrix_util.o main.o
+SOURCE	= matrix_util.cpp main.cpp
+HEADER	= matrix_util.h main.h
 OUT	= a.out
-FLAGS	= -g -c -Wall -fopenmp -Iinclude
+FLAGS	= -g -c -Wall -fopenmp
 LFLAGS	= 
 CC	= g++
 
@@ -14,7 +14,7 @@ a.out: $(OBJS)
 matrix_util.o: matrix_util.cpp
 	$(CC) $(FLAGS) matrix_util.cpp 
 
-CS5350_Parallel_Distributed.o: CS5350_Parallel_Distributed.cpp
+main.o: main.cpp
 	$(CC) $(FLAGS) CS5350_Parallel_Distributed.cpp 
 
 clean:
