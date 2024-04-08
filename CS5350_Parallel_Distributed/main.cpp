@@ -1,4 +1,4 @@
-﻿#include "CS5350_Parallel_Distributed.h"
+﻿#include "main.h"
 
 
 const int MAX_THREADS = 64;
