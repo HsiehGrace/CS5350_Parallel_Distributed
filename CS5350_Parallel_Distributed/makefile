@@ -15,7 +15,7 @@ matrix_util.o: matrix_util.cpp
 	$(CC) $(FLAGS) matrix_util.cpp 
 
 main.o: main.cpp
-	$(CC) $(FLAGS) CS5350_Parallel_Distributed.cpp 
+	$(CC) $(FLAGS) main.cpp 
 
 clean:
 	rm -f $(OBJS) $(OUT)
