@@ -1,5 +1,5 @@
 #pragma once
-#include "main.h"
+#include "CS5350_Parallel_Distributed.h"
 
 typedef std::vector<std::vector<int>> Matrix;
 
