@@ -1,0 +1,17 @@
+mpi 
+
+Linux command to compile:
+mpic++ mtx_mul_1d.cpp -o run
+
+With openMP for some of the admin matrix creation tasks. 
+mpic++ mtx_mul_1d.cpp -o run -fopenmp
+
+
+Linux command to run:
+mpirun -n 2 ./run _ _ _ - where _ is arguments for dims of matrices. 
+*where 2 is the number of processes in the program. 
+
+
+
+
+cd /mnt/c/Users/seana/Documents/CS5350\ -\ \ Parallel\ and\ Distributed\ Algorithms/Group_Assignment_2
