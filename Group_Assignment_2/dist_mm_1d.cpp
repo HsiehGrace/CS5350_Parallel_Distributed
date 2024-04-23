@@ -1,23 +1,21 @@
-#include <omp.h>
 #include <iostream>
 #include <time.h>  
 #include "mpi.h"
 
 struct Dimensions {
-  int m, n, q, p;
+  int m, n, q, p, r;
 };
 
 struct Matrix {
 
-  int m, n, q;
-  int **matrix_array = new int*[m];
+  int rows, cols;
+  int **matrix_array = new int*[rows];
 
   ~Matrix() {
-    for (int i = 0; i < m; i++) {
+    for (int i = 0; i < rows; i++) {
       delete [] matrix_array[i];
     }
     delete [] matrix_array;
-
   }
 
 };
@@ -55,6 +53,8 @@ int main(int argc, char* argv[]) {
     dims.n = std::atoi(argv[2]);
     dims.q = std::atoi(argv[3]);
     dims.p = p;
+    dims.r = r;
+    
 
     if (dims.m % p != 0 || dims.n % p != 0 || dims.q % p != 0) {
       if (r == 0){
@@ -69,12 +69,9 @@ int main(int argc, char* argv[]) {
   int** matrix_b = create_test_matrix(dims.n, dims.q);
 
   mm_1d_distributed(matrix_a, matrix_b, dims);
-
-  // so ugly
+  
   for (int i = 0; i < dims.m; i++) {
     delete [] matrix_a[i];
-    if (r == 0) {
-    }
   }
   delete [] matrix_a;
   
@@ -90,9 +87,7 @@ int main(int argc, char* argv[]) {
 
 void mm_1d_distributed(int** matrix_a, int** matrix_b, const Dimensions &dims) {
 
-  int r;
-	MPI_Comm_rank(MPI_COMM_WORLD, &r);
-
+  const int r = dims.r;
   const int m = dims.m;
   const int n = dims.n;
   const int q = dims.q;
@@ -116,56 +111,56 @@ void mm_1d_distributed(int** matrix_a, int** matrix_b, const Dimensions &dims) {
     a_portion[a_idx++] = row;
   } 
 
-  int* b_portion = flatten_matrix(n, q, p, start_b, end_b, matrix_b);
-
-  // Allocate memory for the reconstituted b_matrix.
-  int** reshaped_b_matrix = new int*[n];
-  for (int i = 0; i < n; i++) {
-    reshaped_b_matrix[i] = new int[q/p];
-  }
-
   // Allocate memory for mtx_c.
   int** mtx_c = new int*[m];
   for (int w = 0; w < m; w++) {
     mtx_c[w] =  new int[q];
   }
 
+  int* b_portion =  new int[n * q/p];
+  int flat_index = 0;
+  for (int j = start_b; j < end_b; j++) {
+    for (int i = 0; i < n; i++) {
+      b_portion[flat_index++] = matrix_b[i][j];   
+    }
+  }
+
   // Buffer that will receive data from other processes. 
   int receive_buffer[n * q/p];
-
+  
   for (int t = 0; t < p; t++) {
 
     int send_to = (r + t) % p;
     int receive_from = (r - t + p) % p;
 
     if (t != 0) {
-
       MPI_Send(b_portion, n * q/p, MPI_INT, send_to, 0, MPI_COMM_WORLD);
       MPI_Recv(receive_buffer, n * q/p, MPI_INT, receive_from, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      
-      reshape_matrix(n, q, p, reshaped_b_matrix, receive_buffer);
     }
-
-    // Matrix multiplication with reshaped_b_matrix.
-    // #pragma omp parallel for
-    // for (int i = 0; i < m/p; i++) {
+    
+    // Matrix multiplication with matrix_b values - in receive buffer.
     for (int i = 0; i < m/p; i++) {
+      int idx = 0;
       for (int j = 0; j < q/p; j++) {
-      // for (int j = 0; j < n/p; j++) {
         int sum = 0;
         for (int k = 0; k < n; k++) {
           if (t == 0) {
             sum += a_portion[i][k] * matrix_b[k][j + start_b];
           } else {
-            sum += a_portion[i][k] * reshaped_b_matrix[k][j];
+            sum += a_portion[i][k] * receive_buffer[idx++];
           }
         }
         mtx_c[start_a + i][j + receive_from * q/p] = sum;
       }
     }
   }
-  
+  for (int x = 0; x < m/p; x++) {
+    delete [] a_portion[x];
+  }
+  delete [] a_portion;
+  delete [] b_portion;
 
+  // Flatten this processes values / portion of matrix_c.
   int* buffer_list = new int[m/p * q];
   int idx = 0;
   for (int i = r * m/p; i < (r + 1) * m/p; i++) {
@@ -174,10 +169,11 @@ void mm_1d_distributed(int** matrix_a, int** matrix_b, const Dimensions &dims) {
     }
   }
 
-
+  // Aggregate all processes values in process 0's matrix_c.
   for (int t = 1; t < p; t++) {
     if (r == t) {
       MPI_Send(buffer_list, m/p * q, MPI_INT, 0, 0, MPI_COMM_WORLD);
+      
     }
     if (r == 0) {
       MPI_Recv(buffer_list, m/p * q, MPI_INT, t, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -189,44 +185,29 @@ void mm_1d_distributed(int** matrix_a, int** matrix_b, const Dimensions &dims) {
       }
     }
   }
+  delete [] buffer_list;
 
 
   if (r == 0) {
-
     int **sequential = new int*[m];
     sequential = mm_sequential(matrix_a, matrix_b, dims);
     verify(mtx_c, sequential, m, q);
-
     for (int i = 0; i < m; i++) {
       delete [] sequential[i];
     }
     delete [] sequential;
   }
-
-  delete [] buffer_list;
-
-  for (int i = 0; i < n; i++) {
-    delete [] reshaped_b_matrix[i];
-  }
-  delete [] reshaped_b_matrix;
-
-  for (int x = 0; x < m/p; x++) {
-    delete [] a_portion[x];
-  }
-  delete [] a_portion;
-  delete [] b_portion;
-
   for (int w = 0; w < m; w++) {
     delete [] mtx_c[w];
   }
   delete mtx_c;
-
-
 }
 
+
+// Not needed + incorrect. 
 int* flatten_matrix(const int &n, const int &q, const int &p, const int &start, const int &end, int** matrix_to_flatten) {
 
-  // Flatten process r's portion of matrix_b as an array to send.
+  // Flatten process r's portion of matrix_b into a 1d array to send.
   int* flattened_matrix =  new int[n * q/p];
   int flat_index = 0;
   for (int j = 0; j < n; j++) {
@@ -238,6 +219,7 @@ int* flatten_matrix(const int &n, const int &q, const int &p, const int &start, 
   return flattened_matrix;
 }
 
+// Not needed + time consuming + inefficient. 
 void reshape_matrix (const int &n, const int &q, const int &p, int** reshaped_b_matrix, int* receive_buffer) {
 
   int idx = 0;
@@ -248,9 +230,10 @@ void reshape_matrix (const int &n, const int &q, const int &p, int** reshaped_b_
   }
 }
 
-int** create_test_matrix(const int &rows, const int &cols) {
 
+int** create_test_matrix(const int &rows, const int &cols) {
   int** matrix = new int*[rows];
+  int idx = 0;
   for (int i = 0; i < rows; i++) {
     int* row = new int[cols];
     for (int j = 0; j < cols; j++){
@@ -258,7 +241,6 @@ int** create_test_matrix(const int &rows, const int &cols) {
     }
     matrix[i] = row;
   }
-
   return matrix;
 }
 
