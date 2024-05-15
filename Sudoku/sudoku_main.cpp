@@ -1,102 +1,82 @@
+#include "variables.h"
 #include <iostream>
-#include <time.h> 
-#include <random>
-#include <fstream> 
-#include <string>
-#include <sstream>
+#include <iomanip>
+#include <chrono>
 #include "sudoku_solver.h"
+#include "board_populator.h"
+#include "logging.h"
+#include "validate.h"
 
-int main() {
-
-  srand(time(NULL)); 
+int main(int argc, char* argv[]) {
   
-  // Parsing source.txt to create a 25x25 game board.
-  std::ifstream inputFile;
-  inputFile.open("source.txt");
-  if (!inputFile) {
-      cerr << "Unable to open file!" << endl;
-      return 1; 
-  }
-  int another_board[25][25];
-  string line;
-  int row = 0;
-  int col = 0;
-  while (getline(inputFile, line)) {
-
-    std::stringstream ss(line);
-    string temp = "";
-    for (int i = 0; i < line.length(); i++) {
-      
-      if (isdigit(line[i])) {
-        temp += line[i];
-      } 
-      if (line[i] == ' ' && !temp.empty()) {
-        another_board[row][col] = stoi(temp);
-        col++;
-        temp = "";
-      }
-      if (line[i] == '.') {
-        another_board[row][col] = 0;
-        col++;
-      }
-      if (i == line.length() - 1) {
-        if (!temp.empty()) {
-          another_board[row][col] = stoi(temp);
-          temp = "";
-        }
-        row++;
-        col = 0;
-      }
-    }
-      
-  }
-  inputFile.close();
-
-  // Blank game board.
-  int test_board[DIMENSION][DIMENSION];
-  for (int i = 0; i < DIMENSION; i++) {
-    for (int j = 0; j < DIMENSION; j++) {
-      test_board[i][j] = 0;
-    }
+  double sparse = .5;
+  if (argc == 2) {
+    sparse = stod(argv[1]);
   }
   
-  int aux_board[DIMENSION][DIMENSION];
+  auto start = chrono::high_resolution_clock::now();
+  auto end = chrono::high_resolution_clock::now();
+  bool result;
+  int sixteen_board[DIMENSION][DIMENSION];
+  log_headers("single_brute_force.txt");
+  log_headers("parallel_brute_force.txt");
+  log_headers("single_efficient.txt");
+  log_headers("parallel_efficient.txt");
 
-  // Backtracking algorithm will solve a blank 16x16 but not 25x25. 
-  if (solveSudoku(test_board) != true){
-    std::cout << "No solution exists";
+
+  // // Non-parallel brute force
+  // // sparse = 0.0;
+  for (int i = 0; i < 100; i++) {
+    random_board(sixteen_board, sparse);
+    Board b1(sixteen_board);
+    start = chrono::high_resolution_clock::now();
+    b1.solve_remaining();
+    end = chrono::high_resolution_clock::now();
+    result = isValidSudoku(b1.working_board);
+    log_results("single_brute_force.txt", sparse, start, end, result);
+  //   // sparse += .01;
   }
     
 
-  // Populate aux_board with values from the solved test_board.
-  for (int i = 0; i < DIMENSION; i ++) {
-    for (int j = 0; j < DIMENSION; j++) {
-      aux_board[i][j] = test_board[i][j];
-      int r = rand() % DIMENSION;
-      aux_board[i][r] = 0;
-      // Add more aux_board[i][r] = 0 for sparser game boards. Remove for more answer-dense gameboards. Not perfect.
-      r = rand() % DIMENSION;
-      aux_board[i][r] = 0;
-        
-    }
+  
+  // // Parallel brute force algorithm. 
+  // sparse = .5;
+  random_board(sixteen_board, sparse);
+  Board b2(sixteen_board);
+  start = chrono::high_resolution_clock::now();
+  b2.solve_remaining_par();
+  end = chrono::high_resolution_clock::now();
+  result = isValidSudoku(b2.working_board);
+  log_results("parallel_brute_force.txt", sparse, start, end, result);
+
+  
+  // sparse = 0.0;
+  // Non-parallel efficient algorithm. 
+  for (int i = 0; i < 100; i++) {
+    random_board(sixteen_board, sparse);
+    Board b3(sixteen_board);
+    start = chrono::high_resolution_clock::now();
+    b3.all_force_populate();
+    b3.solve_remaining();
+    end = chrono::high_resolution_clock::now();
+    result = isValidSudoku(b3.working_board);
+    log_results("single_efficient.txt", sparse, start, end, result);
+    // sparse += .01;
   }
 
-
-  // // Use this for 25x25
-  // Board b1(another_board);
-  // Use this for 16x16.
-  Board b1(aux_board);
-  b1.print_working_board();
-  std::cout << std::endl;
-  b1.all_force_populate();
-  b1.print_working_board();
-  std::cout << "total forced : " << b1.total_forced << "\n";
-  std::cout << std::endl;
-  // Hangs for sparse or large game boards. 
-  b1.solve_remaining();
-  b1.print_working_board();
-  std::cout << std::endl;
-
+  // sparse += .0;
+  for (int i = 0; i < 50; i++) {
+    // Parallel efficient
+    random_board(sixteen_board, sparse);
+    Board b4(sixteen_board);
+    
+    start = chrono::high_resolution_clock::now();
+    b4.efficient_parallel();
+    end = chrono::high_resolution_clock::now();
+    result = isValidSudoku(b4.working_board);
+    log_results("parallel_efficient.txt", sparse, start, end, result);
+    // sparse += .01;
+  }
 
 
   return 0;
